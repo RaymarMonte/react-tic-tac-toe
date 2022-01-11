@@ -3,9 +3,13 @@ import ReactDOM from 'react-dom';
 import './index.css';
 
 function Square(props) {
+    let className = "square";
+    if (props.isWinner) {
+        className += " winner";
+    }
     return (
         <button
-            className="square"
+            className={className}
             onClick={props.onClick}
         >
             {props.value}
@@ -15,10 +19,15 @@ function Square(props) {
 
 class Board extends React.Component {
     renderSquare(x, y) {
+        let isWinner = false;
+        if (this.props.winner) {
+            isWinner = this.props.winner.some(([a, b]) => a === x && b === y);
+        }
         return (
             <Square key={[x, y]}
                 value={this.props.squares[x][y]}
                 onClick={() => this.props.onClick(x, y)}
+                isWinner={isWinner}
             />
         );
     }
@@ -115,7 +124,8 @@ class Game extends React.Component {
 
         let status;
         if (winner) {
-            status = `Winner: ${winner}`;
+            const [[x, y]] = winner;
+            status = `Winner: ${current.squares[x][y]}`;
         }
         else {
             status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
@@ -126,6 +136,7 @@ class Game extends React.Component {
                 <div className="game-board">
                     <Board
                         squares={current.squares}
+                        winner={winner}
                         onClick={(x, y) => this.handleClick(x, y)}
                     />
                 </div>
@@ -147,19 +158,23 @@ ReactDOM.render(
 );
 
 function calculateWinner(squares) {
-    for (let i = 0;i < 3;i++) {
-        if (squares[i][0] && squares[i][0] === squares[i][1] && squares[i][1] === squares[i][2]) {
-            return squares[i][0];
+    const lines = [
+        [[0, 0], [0, 1], [0, 2]],
+        [[1, 0], [1, 1], [1, 2]],
+        [[2, 0], [2, 1], [2, 2]],
+        [[0, 0], [1, 0], [2, 0]],
+        [[0, 1], [1, 1], [2, 1]],
+        [[0, 2], [1, 2], [2, 2]],
+        [[0, 0], [1, 1], [2, 2]],
+        [[0, 2], [1, 1], [2, 0]],
+    ];
+    for (let i = 0; i < lines.length; i++) {
+        const [[ax, ay], [bx, by], [cx, cy]] = lines[i];
+        if (squares[ax][ay] && 
+            squares[ax][ay] === squares[bx][by] && 
+            squares[ax][ay] === squares[cx][cy]) {
+            return lines[i];
         }
-        if (squares[0][i] && squares[0][i] === squares[1][i] && squares[1][i] === squares[2][i]) {
-            return squares[0][i];
-        }
-    }
-    if (squares[1][1] && squares[0][0] === squares[1][1] && squares[1][1] === squares[2][2]) {
-        return squares[1][1];
-    }
-    if (squares[1][1] && squares[0][2] === squares[1][1] && squares[1][1] === squares[2][0]) {
-        return squares[1][1];
     }
     
     return null;
